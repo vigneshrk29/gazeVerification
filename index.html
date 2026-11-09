@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Look-ahead Distance Validation</title>
+<meta name="description" content="Validation of look-ahead distance from Pupil Labs Neon gaze and VidMap + VI trajectories against motion capture.">
+<style>
+:root{--bg:#ffffff;--fg:#1d2127;--muted:#5b6470;--line:#d9dde3;--card:#f6f7f9;--accent:#c62f2b;--ours:#fdeceb;--ref:#eef3fb;--box:#ffffff;--grp:#f3f5f8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181c;--fg:#e6e8eb;--muted:#9aa3ae;--line:#323840;--card:#1d2126;--accent:#ff6b63;--ours:#3a2222;--ref:#1f2a3a;--box:#1d2126;--grp:#191c21}}
+:root[data-theme="dark"]{--bg:#15181c;--fg:#e6e8eb;--muted:#9aa3ae;--line:#323840;--card:#1d2126;--accent:#ff6b63;--ours:#3a2222;--ref:#1f2a3a;--box:#1d2126;--grp:#191c21}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:40px 16px 64px}
+h1{font-size:2rem;line-height:1.25;margin:0 0 8px}
+h2{font-size:1.35rem;margin:48px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
+p,li{color:var(--fg)} .lead{color:var(--muted);font-size:1.05rem;margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:6px 18px;margin:18px 0 8px;font-size:.95rem}
+a{color:var(--accent)}
+.fig{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0}
+.fig svg{width:100%;height:auto;display:block}
+svg .box{fill:var(--box);stroke:var(--fg);stroke-width:1.3}
+svg .out{fill:var(--ref)}
+svg .val{fill:var(--ours);stroke:var(--accent);stroke-width:1.2;stroke-dasharray:4 3}
+svg .t{fill:var(--fg);font-size:13px;text-anchor:middle;font-weight:600}
+svg .s{fill:var(--muted);font-size:12px;font-weight:400}
+svg .lab{fill:var(--fg);font-size:15px;font-weight:700}
+svg .cite{fill:var(--accent);font-size:11.5px;text-anchor:middle;text-decoration:underline}
+svg .vh{fill:var(--muted);font-size:11px;text-anchor:middle;font-style:italic}
+svg .vd{fill:var(--accent);font-size:11.5px;text-anchor:middle;font-weight:600}
+svg .vm{fill:var(--fg);font-size:12px;text-anchor:middle;font-weight:600}
+svg a:hover .vd, svg a:hover .cite, svg a:hover tspan{text-decoration:underline}
+svg .arr{fill:none;stroke:var(--fg);stroke-width:1.6;marker-end:url(#ar)}
+svg .brk{fill:none;stroke:var(--fg);stroke-width:1.6}
+svg .vl{stroke:var(--accent);stroke-width:1.2;stroke-dasharray:3 3}
+svg .ah{fill:var(--fg)}
+svg .off{opacity:.3}
+.legend{font-size:.88rem;color:var(--muted)}
+.authors{font-size:1.02rem;margin:0 0 6px} .aff{color:var(--muted)}
+ol.refs li{margin:4px 0}
+h3{font-size:1.05rem;margin:28px 0 8px} h4{font-size:.98rem;margin:22px 0 4px}
+.cap{color:var(--muted);font-size:.88rem;margin:6px 0 0}
+.tw{overflow-x:auto;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-weight:600;border-bottom:2px solid var(--line)}
+table.wrap td,table.wrap th{white-space:normal;text-align:left;vertical-align:top}
+table.wrap td:first-child{white-space:nowrap}
+tr.sep td{border-top:2px solid var(--line)}
+th.grp,td.grp{border-left:2px solid var(--line)} thead th[colspan]{text-align:center}
+table.ev{font-size:.82rem} table.ev th,table.ev td{padding:6px 6px}
+.summary{background:var(--card);border-left:4px solid var(--accent);padding:10px 14px;border-radius:6px}
+.fig img{width:100%;height:auto;display:block;border-radius:6px;background:#fff}
+
+tr.ours td{background:var(--ours)} tr.ref td{background:var(--ref)}
+.grid{display:grid;grid-template-columns:1fr;gap:18px}
+.grid h3{margin:0 0 6px}
+.hero{display:grid;grid-template-columns:1fr;gap:14px;margin:22px 0 4px}
+@media (min-width:760px){.hero{grid-template-columns:1fr 1fr}}
+.hero figure{margin:0} .hero video{width:100%;height:auto;display:block;border-radius:8px;border:1px solid var(--line);background:#fff}
+.hero figcaption{font-size:.88rem;color:var(--muted);margin-top:4px}</style></head>
+<body><main>
+<h1>Look-ahead Distance Validation for Neon-IMU-Analysis</h1>
+<p class="authors">Vignesh Radhakrishnan and Mark Hollands<br><span class="aff">School of Sport &amp; Exercise Sciences, Liverpool John Moores University, UK</span></p>
+<p class="lead">This page shows the validation of the look-ahead distance computed from Pupil Labs Neon gaze and our egocentric trajectories, against motion capture.</p>
+<nav><a href="#pipeline">Pipeline</a><a href="#aim">Aim</a><a href="#dataset">Dataset</a><a href="#reference">Reference</a><a href="#metrics">Metrics</a><a href="#results">Results</a><a href="#summary">Summary</a><a href="#references">References</a></nav>
+
+<h2 id="pipeline">Pipeline</h2>
+<div class="fig"><svg viewBox="0 0 1000 790" role="img" aria-label="Pipeline: Pupil Labs Neon glasses and three IMUs are calibrated and time-synchronised. The Neon data go to the Pupil Labs analysis, giving eye and pupillometric metrics, and, combined with the glasses trajectory from VidMap + VI, the look-ahead distance; the IMU data go to the biomechanical metrics. Validation: only the look-ahead distance is validated here, against motion capture; eye metrics are taken as provided by Pupil Labs and the biomechanical branch is validated separately."><defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+<text x="10" y="20" class="lab">Proposed pipeline</text>
+<image href="assets/setup.png" x="10" y="44" width="190" height="306" preserveAspectRatio="xMidYMid meet"/>
+<polyline points="204,70.09 222,70.09 222,184 238,184" class="arr"/>
+<polyline points="204,166.9 208,166.9 208,308.36 204,308.36" class="brk"/>
+<line x1="204" y1="285.79" x2="208" y2="285.79" class="brk"/>
+<polyline points="208,234 238,234" class="arr"/>
+<rect x="240" y="159" width="200" height="90" rx="7" class="box"/>
+<text x="340" y="186" class="t"><tspan x="340">Calibration</tspan><tspan x="340" dy="16" class="s">based on the WGL CMP calibration</tspan><tspan x="340" dy="16">+ time-synchronisation</tspan></text>
+<a href="https://doi.org/10.1109/TNSRE.2025.3622734" target="_blank" rel="noopener"><text x="340" y="150" class="cite">Castellaz et al. 2025 [1]</text></a>
+<polyline points="441,179 470,179 470,96 498,96" class="arr"/>
+<rect x="500" y="68" width="180" height="56" rx="7" class="box"/>
+<text x="590" y="101" class="t"><tspan x="590">Pupil Labs analysis</tspan></text>
+<g><polyline points="681,96 718,96" class="arr"/>
+<rect x="720" y="68" width="270" height="56" rx="7" class="box out"/>
+<text x="855" y="91" class="t"><tspan x="855">Eye and pupillometric metrics</tspan><tspan x="855" dy="16" class="s">fixations · saccades · pupil size</tspan></text></g>
+<polyline points="441,219 470,219 470,186 498,186" class="arr"/>
+<rect x="500" y="158" width="180" height="56" rx="7" class="box"/>
+<text x="590" y="181" class="t"><tspan x="590">Trajectory</tspan></text>
+<a href="https://vigneshrk29.github.io/trajectory-validation/" target="_blank" rel="noopener"><text x="590" y="199" class="cite">VidMap + VI [3]</text></a>
+<polyline points="650,125 650,148 718,148" class="arr"/>
+<polyline points="681,190 718,190" class="arr"/>
+<rect x="720" y="138" width="270" height="76" rx="7" class="box out"/>
+<text x="855" y="166" class="t"><tspan x="855">Look-ahead distance</tspan><tspan x="855" dy="16" class="s">gaze ray → floor, from the glasses’</tspan><tspan x="855" dy="15" class="s">position in the world</tspan></text>
+<g><polyline points="290,250 290,292" class="arr"/>
+<rect x="240" y="294" width="100" height="70" rx="7" class="box"/>
+<text x="290" y="326" class="t"><tspan x="290">Gait-sequence</tspan><tspan x="290" dy="16">detection</tspan></text>
+<polyline points="341,329 354,329" class="arr"/>
+<rect x="356" y="294" width="100" height="70" rx="7" class="box"/>
+<text x="406" y="326" class="t"><tspan x="406">Stride</tspan><tspan x="406" dy="16">detection</tspan></text>
+<polyline points="457,329 470,329" class="arr"/>
+<rect x="472" y="294" width="100" height="70" rx="7" class="box"/>
+<text x="522" y="326" class="t"><tspan x="522">Gait event</tspan><tspan x="522" dy="16">detection</tspan></text>
+<polyline points="573,329 586,329" class="arr"/>
+<rect x="588" y="294" width="100" height="70" rx="7" class="box"/>
+<text x="638" y="318" class="t"><tspan x="638">ZUPT</tspan><tspan x="638" dy="16" class="s">zero-velocity</tspan><tspan x="638" dy="16" class="s">updates</tspan></text>
+<polyline points="689,329 702,329" class="arr"/>
+<rect x="704" y="294" width="100" height="70" rx="7" class="box"/>
+<text x="754" y="318" class="t"><tspan x="754">WGL CMP</tspan><tspan x="754" dy="16" class="s">feet + CoM</tspan><tspan x="754" dy="16" class="s">trajectories</tspan></text>
+<polyline points="805,329 818,329" class="arr"/>
+<rect x="820" y="294" width="170" height="70" rx="7" class="box out"/>
+<text x="905" y="315" class="t"><tspan x="905">Biomechanical metrics</tspan><tspan x="905" dy="16" class="s">spatiotemporal · stability</tspan><tspan x="905" dy="16" class="s">nonlinear</tspan></text></g>
+<text x="10" y="426" class="lab">Validation: what is checked on this page</text>
+<image href="assets/setup.png" x="10" y="454" width="190" height="306" preserveAspectRatio="xMidYMid meet"/>
+<polyline points="204,480.09000000000003 222,480.09000000000003 222,594 238,594" class="arr"/>
+<polyline points="204,576.9 208,576.9 208,718.36 204,718.36" class="brk"/>
+<line x1="204" y1="695.79" x2="208" y2="695.79" class="brk"/>
+<polyline points="208,644 238,644" class="arr"/>
+<rect x="240" y="569" width="200" height="90" rx="7" class="box"/>
+<text x="340" y="596" class="t"><tspan x="340">Calibration</tspan><tspan x="340" dy="16" class="s">based on the WGL CMP calibration</tspan><tspan x="340" dy="16">+ time-synchronisation</tspan></text>
+<a href="https://doi.org/10.1109/TNSRE.2025.3622734" target="_blank" rel="noopener"><text x="340" y="560" class="cite">Castellaz et al. 2025 [1]</text></a>
+<polyline points="441,589 470,589 470,506 498,506" class="arr"/>
+<rect x="500" y="478" width="180" height="56" rx="7" class="box"/>
+<text x="590" y="511" class="t"><tspan x="590">Pupil Labs analysis</tspan></text>
+<g class="off"><polyline points="681,506 718,506" class="arr"/>
+<rect x="720" y="478" width="270" height="56" rx="7" class="box out"/>
+<text x="855" y="501" class="t"><tspan x="855">Eye and pupillometric metrics</tspan><tspan x="855" dy="16" class="s">as provided by Pupil Labs (not validated here)</tspan></text></g>
+<polyline points="441,629 470,629 470,596 498,596" class="arr"/>
+<rect x="500" y="568" width="180" height="56" rx="7" class="box"/>
+<text x="590" y="591" class="t"><tspan x="590">Trajectory</tspan></text>
+<a href="https://vigneshrk29.github.io/trajectory-validation/" target="_blank" rel="noopener"><text x="590" y="609" class="cite">VidMap + VI [3]</text></a>
+<polyline points="650,535 650,558 718,558" class="arr"/>
+<polyline points="681,600 718,600" class="arr"/>
+<rect x="720" y="548" width="270" height="76" rx="7" class="box out"/>
+<text x="855" y="576" class="t"><tspan x="855">Look-ahead distance</tspan><tspan x="855" dy="16" class="s">gaze ray → floor, from the glasses’</tspan><tspan x="855" dy="15" class="s">position in the world</tspan></text>
+<line x1="590" y1="624" x2="590" y2="634" class="vl"/>
+<rect x="500" y="634" width="180" height="50" rx="7" class="val"/>
+<text x="590" y="650" class="vh">validated in</text>
+<a href="https://vigneshrk29.github.io/trajectory-validation/" target="_blank" rel="noopener"><text x="590" y="668" class="vd">trajectory validation [3]</text></a>
+<line x1="855" y1="624" x2="855" y2="634" class="vl"/>
+<rect x="720" y="634" width="270" height="50" rx="7" class="val"/>
+<text x="855" y="650" class="vh">validated on (this page)</text>
+<a href="#dataset"><text x="855" y="668" class="vd">LJMU motion capture · 4 trials</text></a>
+<g class="off"><polyline points="290,660 290,708" class="arr"/>
+<rect x="240" y="710" width="100" height="70" rx="7" class="box"/>
+<text x="290" y="742" class="t"><tspan x="290">Gait-sequence</tspan><tspan x="290" dy="16">detection</tspan></text>
+<polyline points="341,745 354,745" class="arr"/>
+<rect x="356" y="710" width="100" height="70" rx="7" class="box"/>
+<text x="406" y="742" class="t"><tspan x="406">Stride</tspan><tspan x="406" dy="16">detection</tspan></text>
+<polyline points="457,745 470,745" class="arr"/>
+<rect x="472" y="710" width="100" height="70" rx="7" class="box"/>
+<text x="522" y="742" class="t"><tspan x="522">Gait event</tspan><tspan x="522" dy="16">detection</tspan></text>
+<polyline points="573,745 586,745" class="arr"/>
+<rect x="588" y="710" width="100" height="70" rx="7" class="box"/>
+<text x="638" y="734" class="t"><tspan x="638">ZUPT</tspan><tspan x="638" dy="16" class="s">zero-velocity</tspan><tspan x="638" dy="16" class="s">updates</tspan></text>
+<polyline points="689,745 702,745" class="arr"/>
+<rect x="704" y="710" width="100" height="70" rx="7" class="box"/>
+<text x="754" y="734" class="t"><tspan x="754">WGL CMP</tspan><tspan x="754" dy="16" class="s">feet + CoM</tspan><tspan x="754" dy="16" class="s">trajectories</tspan></text>
+<polyline points="805,745 818,745" class="arr"/>
+<rect x="820" y="710" width="170" height="70" rx="7" class="box out"/>
+<text x="905" y="731" class="t"><tspan x="905">Biomechanical metrics</tspan><tspan x="905" dy="16" class="s">spatiotemporal · stability</tspan><tspan x="905" dy="16" class="s">(validated separately)</tspan></text></g>
+</svg></div>
+<p class="legend">Pupil Labs Neon glasses and three IMUs (pelvis, left and right foot) are calibrated and time-synchronised. The Neon data go to the Pupil Labs analysis, which gives the eye and pupillometric metrics and the gaze direction; the gaze combined with the glasses' trajectory from our trajectory pipeline (VidMap + VI [3]) gives the look-ahead distance. In the validation the biomechanical branch is greyed out (validated separately), as are the eye and pupillometric metrics (taken as provided by Pupil Labs [2]); the red boxes give what each step is checked on.</p>
+
+<h2 id="aim">Aim</h2>
+<p>Only the look-ahead distance — how far ahead on the ground a person looks while walking, an important metric for real-world analysis [8, 9] — is validated here. Other pupillometric and eye-kinematic metrics, such as fixations and saccades, are taken as provided by the Pupil Labs software [2].</p>
+
+<h2 id="dataset">Dataset</h2>
+<p>Four trials were collected in the motion capture laboratory at Liverpool John Moores University (Qualisys, 100 Hz). A target was made from a cluster of markers and placed at a constant location on the floor of the lab. In each trial the participant, wearing Neon glasses with four individual reflective markers, walked towards the target whilst fixating on it; the starting position was varied across the four trials. Each recording starts with five head nods, used to synchronise the Neon and the motion capture.</p>
+<p>The trajectory of the eye-tracking glasses was obtained with our trajectory pipeline (VidMap + VI; <a href="https://vigneshrk29.github.io/trajectory-validation/">trajectory validation</a> [3]). The look-ahead distances obtained from the motion capture were compared with those obtained from the trajectory and Pupil Labs' gaze outputs, over the fixation period of each trial: from when the gaze arrives on the target to when it leaves it, marked with the events <code>fixationStart</code> and <code>fixationEnd</code> in Pupil Cloud.</p>
+<div class="tw"><table><thead><tr><th>trial</th><th>fixation window (s)</th><th>duration (s)</th><th>start distance<br>3D / horizontal (m)</th><th>gaze<br>samples</th><th>with<br>reference</th><th>reference from<br>markers + gyro</th></tr></thead><tbody><tr><td>Level 1</td><td>29.68–38.81</td><td>9.1</td><td>4.42 / 4.10</td><td>1645</td><td>1645</td><td>34 %</td></tr><tr><td>Level 2</td><td>34.62–43.98</td><td>9.4</td><td>4.98 / 4.68</td><td>1818</td><td>1818</td><td>37 %</td></tr><tr><td>Level 3</td><td>37.96–47.47</td><td>9.5</td><td>5.79 / 5.55</td><td>1784</td><td>1784</td><td>20 %</td></tr><tr><td>Level 4</td><td>33.56–42.04</td><td>8.5</td><td>4.91 / 4.62</td><td>1586</td><td>1586</td><td>38 %</td></tr></tbody></table></div>
+<p class="cap">Gaze samples at 200 Hz inside the fixation window (worn, no blinks). The mocap reference covers the samples inside the motion capture recording; where the glasses' rigid body is lost near the target (two of the four markers occluded while looking down), it comes from the remaining markers (see Reference).</p>
+
+<h2 id="reference">Reference</h2>
+<p>The reference look-ahead distance is the 3D distance from the glasses to the target, from motion capture only:</p>
+<ul>
+<li><b>Glasses:</b> the Qualisys 6-DOF pose of the Neon rigid body (four individual markers; origin at their centroid, about 1 cm from the scene camera). Frames where the pose misses one of its markers by more than 5 mm are dropped.</li>
+<li><b>Target:</b> the mean of the median positions of the target's markers (static).</li>
+<li><b>Synchronisation:</b> the Neon IMU and the motion capture clocks are aligned by correlating |Neon gyro| with the magnitude of the rigid body's angular velocity, fitted on the head nods (as in [3]).</li>
+<li><b>Near the target:</b> when the participant looks down, QTM loses the rigid body (fewer than three markers visible). There, the orientation is carried forward from the last valid pose with the Neon gyroscope, and the position is computed from the remaining two markers with the known marker layout. Checked by simulating a 4 s loss where the full pose is known: position error 0.2–0.7 mm median, at most 1.6 mm.</li>
+</ul>
+<p>The reference uses neither the trajectory pipeline, nor the gaze, nor a floor model.</p>
+
+<h2 id="metrics">Metrics</h2>
+<p><b>Look-ahead distance from gaze.</b> At each gaze sample, the gaze ray is placed in the world with the camera pose from VidMap + VI and intersected with the floor (the horizontal plane at the target's height); the look-ahead distance is the 3D distance from the camera to that point. Two gaze rays:</p>
+<ul>
+<li><b>gaze point</b> — Pupil Labs' gaze (scene-camera pixels, undistorted with the camera's calibration) as a ray from the scene camera;</li>
+<li><b>optical axes</b> — Pupil Labs' 3D eye states: the mean of the two eyes' optical axes from the midpoint of the eyeball centres. The optical axis differs from the visual axis by a few degrees (angle kappa), which is not corrected here.</li>
+</ul>
+<p><b>Trajectory.</b> VidMap + VI over the whole recording, gravity-aligned by the IMU, with the scale kept at VidMap's metric scale (the VI graph's own scale estimate collapsed on these short, slow walks), and placed in the motion capture frame with a yaw + translation fit on the camera positions.</p>
+<p><b>Errors</b>, per gaze sample: the look-ahead error (gaze − reference) in metres and as a percentage of the reference; the angle between the gaze ray and the direction from the camera to the target; agreement as Bland–Altman bias and 95 % limits [7]. Medians over samples, by reference distance. The same metrics with the gaze rays on the motion-capture pose (rigid body × camera extrinsic) separate the gaze from the trajectory.</p>
+
+<h2 id="results">Results</h2>
+<h3>ScaRF-SLAM maps with the gaze</h3>
+<div class="hero"><figure><video src="assets/video_level1.mp4" autoplay loop muted playsinline preload="auto" aria-label="ScaRF-SLAM map of Level 1 with the camera path and the gaze rays"></video><figcaption>Level 1 · start 4.1 m from the target (horizontal)</figcaption></figure><figure><video src="assets/video_level2.mp4" autoplay loop muted playsinline preload="auto" aria-label="ScaRF-SLAM map of Level 2 with the camera path and the gaze rays"></video><figcaption>Level 2 · start 4.7 m from the target (horizontal)</figcaption></figure><figure><video src="assets/video_level3.mp4" autoplay loop muted playsinline preload="auto" aria-label="ScaRF-SLAM map of Level 3 with the camera path and the gaze rays"></video><figcaption>Level 3 · start 5.5 m from the target (horizontal)</figcaption></figure><figure><video src="assets/video_level4.mp4" autoplay loop muted playsinline preload="auto" aria-label="ScaRF-SLAM map of Level 4 with the camera path and the gaze rays"></video><figcaption>Level 4 · start 4.6 m from the target (horizontal)</figcaption></figure></div>
+<p class="cap">Dense maps from ScaRF-SLAM [5] given our VidMap + VI trajectories, seen from behind each walk. Red: camera path; black frame: the scene camera; black dot: the target (motion capture); blue line: the current gaze ray (gaze point); blue dots: where the earlier gaze landed on the floor. Inset: the scene camera with the gaze point. The map's floor lies 0.1–0.4 m above the true floor, because ScaRF-SLAM scales its depth to the trajectory, whose scale is too small on most trials (below); the gaze markers are drawn on top. The look-ahead analysis does not use the map.</p>
+
+<h3>Look-ahead error by reference distance (all trials, VidMap + VI)</h3>
+<div class="tw"><table><thead><tr><th rowspan="2">reference 3D look-ahead (m)</th><th rowspan="2">samples</th><th colspan="3" class="grp">gaze point</th><th colspan="3" class="grp">optical axes</th></tr><tr><th class="grp">error (m)</th><th>error (%)</th><th>angle (°)</th><th class="grp">error (m)</th><th>error (%)</th><th>angle (°)</th></tr></thead><tbody><tr><td>1.5–2</td><td>3224</td><td class="grp">-0.05</td><td>-3.0</td><td>13.9</td><td class="grp">-0.03</td><td>-2.0</td><td>18.3</td></tr><tr><td>2–2.5</td><td>634</td><td class="grp">-0.09</td><td>-4.1</td><td>7.8</td><td class="grp">-0.22</td><td>-9.6</td><td>13.3</td></tr><tr><td>2.5–3</td><td>486</td><td class="grp">-0.15</td><td>-5.7</td><td>4.9</td><td class="grp">-0.37</td><td>-13.3</td><td>10.6</td></tr><tr><td>3–4</td><td>784</td><td class="grp">-0.26</td><td>-7.2</td><td>3.2</td><td class="grp">-0.58</td><td>-16.0</td><td>7.1</td></tr><tr><td>4–5</td><td>1467</td><td class="grp">-0.52</td><td>-11.3</td><td>2.6</td><td class="grp">-1.01</td><td>-21.4</td><td>6.2</td></tr><tr><td>5–6.5</td><td>238</td><td class="grp">-0.58</td><td>-10.2</td><td>1.7</td><td class="grp">-1.26</td><td>-23.4</td><td>5.4</td></tr></tbody></table></div>
+<p class="cap">Medians over the samples of the four trials in each bin. Negative: the gaze lands short of the target. The 5–6.5 m bin comes from Level 3 only.</p>
+
+<h3>Per trial</h3>
+<div class="tw"><table><thead><tr><th rowspan="2">trial</th><th rowspan="2">samples</th><th colspan="2" class="grp">gaze point · VidMap + VI</th><th colspan="2" class="grp">optical axes · VidMap + VI</th><th colspan="2" class="grp">on the mocap pose (%)</th></tr><tr><th class="grp">error (m)</th><th>error (%)</th><th class="grp">error (m)</th><th>error (%)</th><th class="grp">gaze point</th><th>optical axes</th></tr></thead><tbody><tr><td>Level 1</td><td>1645</td><td class="grp">-0.13</td><td>-5.2</td><td class="grp">-0.26</td><td>-11.3</td><td class="grp">-0.9</td><td>-7.7</td></tr><tr><td>Level 2</td><td>1818</td><td class="grp">-0.04</td><td>-1.6</td><td class="grp">-0.15</td><td>-7.0</td><td class="grp">-5.8</td><td>-9.7</td></tr><tr><td>Level 3</td><td>1784</td><td class="grp">-0.06</td><td>-3.5</td><td class="grp">-0.09</td><td>-4.7</td><td class="grp">-4.4</td><td>-7.9</td></tr><tr><td>Level 4</td><td>1586</td><td class="grp">-0.17</td><td>-8.1</td><td class="grp">-0.27</td><td>-12.8</td><td class="grp">-4.1</td><td>-8.7</td></tr></tbody></table></div>
+<p class="cap">Median 3D look-ahead error over each trial's fixation window. Right: the same with the gaze rays placed on the motion capture pose instead of VidMap + VI.</p>
+
+<h3>Horizontal look-ahead (all trials, VidMap + VI)</h3>
+<div class="tw"><table><thead><tr><th rowspan="2">reference horizontal look-ahead (m)</th><th rowspan="2">samples</th><th colspan="3" class="grp">gaze point</th><th colspan="3" class="grp">optical axes</th></tr><tr><th class="grp">error (m)</th><th>error (%)</th><th>angle (°)</th><th class="grp">error (m)</th><th>error (%)</th><th>angle (°)</th></tr></thead><tbody><tr><td>0.5–1</td><td>589</td><td class="grp">-0.09</td><td>-12.7</td><td>17.0</td><td class="grp">-0.22</td><td>-31.2</td><td>22.3</td></tr><tr><td>1–2</td><td>920</td><td class="grp">-0.13</td><td>-8.7</td><td>7.9</td><td class="grp">-0.33</td><td>-23.3</td><td>13.2</td></tr><tr><td>2–3</td><td>742</td><td class="grp">-0.22</td><td>-9.4</td><td>4.4</td><td class="grp">-0.53</td><td>-21.9</td><td>9.2</td></tr><tr><td>3–4</td><td>787</td><td class="grp">-0.36</td><td>-10.0</td><td>2.9</td><td class="grp">-0.81</td><td>-22.4</td><td>6.7</td></tr><tr><td>4–6</td><td>1360</td><td class="grp">-0.59</td><td>-13.0</td><td>2.4</td><td class="grp">-1.15</td><td>-25.6</td><td>6.0</td></tr></tbody></table></div>
+<p class="cap">The same, with the look-ahead distance measured along the floor. The 3D distance includes the eye height (about 1.6 m) shared by both, so its percentages are smaller, especially close to the target.</p>
+
+<h3>Trajectory accuracy (VidMap + VI vs motion capture)</h3>
+<div class="tw"><table><thead><tr><th>trial</th><th>mocap path (m)</th><th>duration (s)</th><th>ATE, yaw + translation (m)</th><th>ATE, Sim(3) (m)</th><th>scale (Sim(3))</th><th>rotation error (°)</th></tr></thead><tbody><tr><td>Level 1</td><td>6.5</td><td>21</td><td>0.094</td><td>0.047</td><td>1.09</td><td>2.9</td></tr><tr><td>Level 2</td><td>7.2</td><td>22</td><td>0.085</td><td>0.066</td><td>1.05</td><td>1.7</td></tr><tr><td>Level 3</td><td>9.0</td><td>25</td><td>0.318</td><td>0.151</td><td>1.16</td><td>2.5</td></tr><tr><td>Level 4</td><td>8.2</td><td>19</td><td>0.236</td><td>0.084</td><td>1.26</td><td>1.4</td></tr></tbody></table></div>
+<p class="cap">Over the motion capture span of each trial. ATE after a yaw + translation fit (the transform used above) and after a Sim(3) fit; the Sim(3) scale shows VidMap's scale error (1 = metric). For comparison, VidMap + VI on the longer mocap walks of the trajectory validation (32–69 s): ATE 0.08 m median [3].</p>
+
+<h3>Figures</h3>
+<div class="fig"><img src="assets/fig_A_timeseries.png" alt="Look-ahead distance over time per trial: reference and gaze-based (gaze point, optical axes)" loading="lazy"></div>
+<p class="cap">Look-ahead distance over time: reference (black; dashed where it comes from the remaining markers + gyro) and from gaze, VidMap + VI. Grey: the fixation window.</p>
+<div class="fig"><img src="assets/fig_B_scatter.png" alt="Gaze-based against reference look-ahead, all trials" loading="lazy"></div>
+<p class="cap">Gaze-based against reference 3D look-ahead, all trials, VidMap + VI (every 5th sample).</p>
+<div class="fig"><img src="assets/fig_D_landing.png" alt="Gaze landing points on the floor relative to the target per trial" loading="lazy"></div>
+<p class="cap">Where the gaze lands on the floor relative to the target, rotated so that the walking direction points up (circle: 25 cm).</p>
+<div class="fig"><img src="assets/fig_E_bland_altman.png" alt="Bland-Altman plots of the 3D look-ahead, gaze point and optical axes" loading="lazy"></div>
+<p class="cap">Bland–Altman, 3D look-ahead, all trials, VidMap + VI. The 200 Hz samples are strongly correlated, so the limits are descriptive.</p>
+
+<h2 id="summary">Summary</h2>
+<div class="summary">
+<ul>
+<li>The gaze-based look-ahead distance is consistently <b>shorter</b> than the reference, and the error grows with distance: with the gaze point it is small at 1.5–2 m (-3.0 %) and reaches -11.3 % at 4–5 m (3D). The gaze lands short of the target rather than beside it, i.e. the gaze direction is slightly too low.</li>
+<li>Pupil Labs' gaze point is about twice as accurate as the optical axes (-21.4 % at 4–5 m); the optical axes would need a per-person kappa correction. Bland–Altman bias: -0.20 m (gaze point) and -0.39 m (optical axes).</li>
+<li>With the gaze on the motion capture pose the pattern is the same, so the bias comes from the gaze, not the trajectory.</li>
+<li>The trajectory was not very accurate here (ATE 0.08–0.32 m, Sim(3) scale up to 1.26, i.e. the trajectory up to 21 % too small) because of the short movement periods: the IMU could not fix the scale on these short, slow walks, so VidMap's own metric scale was used. Its height and tilt errors explain most of the difference between trials (largest in Level 4).</li>
+</ul>
+</div>
+
+<h2 id="references">References</h2>
+<ol class="refs">
+<li value="1">Castellaz, Wouda &amp; van Beijnum. <a href="https://doi.org/10.1109/TNSRE.2025.3622734">Estimating 3D Ground Reaction Forces During Daily Activities: A Reduced Sensor Setup and Virtual Pivot Point Approach</a>. <i>IEEE Transactions on Neural Systems and Rehabilitation Engineering 33 (2025)</i>.</li>
+<li value="2">Pupil Labs. <a href="https://docs.pupil-labs.com/neon/">Neon documentation</a> (gaze, 3D eye states, fixations and saccades).</li>
+<li value="3">Radhakrishnan &amp; Hollands. <a href="https://vigneshrk29.github.io/trajectory-validation/">Metric trajectories and maps from egocentric video + IMU — validation</a>.</li>
+<li value="4">VidMap. <a href="https://github.com/cvg/vidmap">github.com/cvg/vidmap</a>.</li>
+<li value="5">Zhang, Tao, Dellaert &amp; Fallon. <a href="https://arxiv.org/abs/2606.00307">ScaRF-SLAM: Scale-Consistent Reconstruction with Feed-Forward Models and Classical Visual SLAM</a>. <i>IEEE Robotics and Automation Letters (2026)</i>.</li>
+<li value="6">Depth Anything 3. <a href="https://github.com/ByteDance-Seed/Depth-Anything-3">github.com/ByteDance-Seed/Depth-Anything-3</a>.</li>
+<li value="7">Bland &amp; Altman. <a href="https://doi.org/10.1016/S0140-6736(86)90837-8">Statistical methods for assessing agreement between two methods of clinical measurement</a>. <i>The Lancet 327, 307–310 (1986)</i>.</li>
+<li value="8">Matthis, Yates &amp; Hayhoe. <a href="https://doi.org/10.1016/j.cub.2018.03.008">Gaze and the control of foot placement when walking in natural terrain</a>. <i>Current Biology 28, 1224–1233 (2018)</i>.</li>
+<li value="9">Chapman &amp; Hollands. <a href="https://doi.org/10.1016/j.gaitpost.2005.10.002">Evidence for a link between changes to gaze behaviour and risk of falling in older adults during adaptive locomotion</a>. <i>Gait &amp; Posture 24, 288–294 (2006)</i>.</li>
+</ol>
+</main></body></html>
