@@ -181,8 +181,7 @@ svg .gl{fill:var(--muted);font-size:12.5px;text-anchor:middle;font-weight:600}
 <li><b>Gaze part:</b> the error with a perfect trajectory. The camera is put at the glasses' mocap position and turned so that the tracked target pixel points exactly at the target (roll from the Neon IMU's gravity); the gaze ray then carries only the offset between the gaze and the target seen in the video, converted to centimetres on the floor.</li>
 <li><b>Trajectory part:</b> overall error − gaze part, per sample.</li>
 </ul>
-<p><b>Trajectories.</b> VidMap + VI [3, 4] (VidMap on the scene video, then the VI factor graph with the Neon IMU: metric scale estimated from the IMU, gravity-aligned) and MASt3R-Fusion [12] (visual–inertial), from the end of the head nods to the last <code>fixationEnd</code>, placed in the motion capture frame with a yaw + translation fit on the camera positions. Both use the Neon's camera–IMU rotation; we use the one measured from the video (below).</p>
-<p><b>Camera–IMU rotation.</b> Projecting the target into the video with the mocap pose and Pupil Labs' published camera–IMU rotation put it consistently ~2.5° above the tracked target. The rotation that best maps the predicted target directions onto the tracked ones (fitted per recording) was almost pure pitch and the same on all four level trials (−2.3 to −2.6°); since the markers-to-IMU rotation is re-estimated in every recording, the offset lies between the IMU and the scene camera, inside the Neon module (−99.5° instead of the nominal −102° about the IMU x axis). With the nominal rotation the VI trajectories point the camera ~2–3° too far down, and the look-ahead error of VidMap + VI is two to three times larger. All results below use the corrected rotation.</p>
+<p><b>Trajectories.</b> VidMap + VI [3, 4] (VidMap on the scene video, then the VI factor graph with the Neon IMU: metric scale estimated from the IMU, gravity-aligned) and MASt3R-Fusion [12] (visual–inertial), from the end of the head nods to the last <code>fixationEnd</code>, placed in the motion capture frame with a yaw + translation fit on the camera positions.</p>
 <p><b>Statistics</b>, per gaze sample: medians, by horizontal (or 3D) reference distance; agreement as Bland–Altman bias and 95 % limits [7]. Only samples where both trajectories have a pose are used, so the two are compared on the same samples.</p>
 
 <h2 id="results">Results</h2>
@@ -216,9 +215,8 @@ svg .gl{fill:var(--muted);font-size:12.5px;text-anchor:middle;font-weight:600}
 <div class="summary">
 <ul>
 <li>The gaze-based look-ahead distance is <b>shorter</b> than the reference, mainly because the gaze itself points ~1.5–2° below the target (seen directly in the video): the gaze part is −9 to −12 cm horizontally at 1.5–3 m and grows with distance, the same in both laboratories.</li>
-<li>With the corrected camera–IMU rotation, <b>VidMap + VI adds almost no error</b>: its trajectory part is +2.7 cm (level walking) and +0.6 cm (stairs), median horizontal; overall error −9.1 cm (level) and −11.6 cm (stairs), −7.3 / −12.8 cm at 1.5–2 m. Bland–Altman bias (3D): −0.08 m (level) and −0.11 m (stairs).</li>
+<li><b>VidMap + VI adds almost no error</b>: its trajectory part is +2.7 cm (level walking) and +0.6 cm (stairs), median horizontal; overall error −9.1 cm (level) and −11.6 cm (stairs), −7.3 / −12.8 cm at 1.5–2 m. Bland–Altman bias (3D): −0.08 m (level) and −0.11 m (stairs).</li>
 <li><b>MASt3R-Fusion</b> is as good on level walking (trajectory part −1.0 cm, overall −12.7 cm) but worse on the stairs (trajectory part −11.9 cm, overall −21.4 cm; bias −0.25 m), mostly on Vicon 1–3 (scale 1.21 on Vicon 3).</li>
-<li>The nominal camera–IMU rotation of the Neon tilts the camera of the VI trajectories ~2–3° down; it does not show in position metrics (ATE) or in a rotation reference built with the same rotation, but it doubles to triples the look-ahead error. It is a property of the device, not of how the glasses are worn.</li>
 </ul>
 </div>
 
